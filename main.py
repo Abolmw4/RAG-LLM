@@ -9,25 +9,40 @@ from src.generators.ollama_generator import OllamaGenerator
 from src.pipeline.simple_rag_pipeline import SimpleRAGPipeLine
 from typing import List
 import numpy as np
+import os
 
 def main():
-    data_ingst = DataIngestion(path="/home/abolfazl/Documents/rag-llm-project/docs")
-    chunker = Chunker(chunk_size=500, chunk_overlap=50)
+    
     embeding = Embedding(model_name="BAAI/bge-m3", device="cuda")
-    vectore_store = FaissVectorStore(dimention=1024)    
-    prompt_builder = SimplePrompt()
-    retriver = SimpleRetriver(embedding=embeding, vector_store=vectore_store)
+    
+    if not os.path.exists('data/doc.index') or not os.path.exists("data/doc.pkl"):
+        print("not found any data")
+        data_ingst = DataIngestion(path="/home/abolfazl/Documents/rag-llm-project/docs")
+        chunker = Chunker(chunk_size=500, chunk_overlap=50)
+        vector_store = FaissVectorStore(dimention=1024)
+
+        docs: List[Document] = data_ingst.load_documents()
+        chunks: List[Document] = chunker.split_documents(documents=docs)
+        chunk_embedding: np.ndarray = embeding.embed_documents(chunks=chunks)
+        vector_store.add(embeddings=chunk_embedding, docs=chunks)
+        os.makedirs("data", exist_ok=True)
+        vector_store.save(index_path="data/doc.index", document_path="data/doc.pkl")
+    
+    vector_store: FaissVectorStore = FaissVectorStore.load(index_path='data/doc.index', document_path='data/doc.pkl')
+
+    retriver = SimpleRetriver(embedding=embeding, vector_store=vector_store)
     generator = OllamaGenerator()
+    prompt_builder = SimplePrompt()
     pipeline = SimpleRAGPipeLine(retriver=retriver, prompt_builder=prompt_builder, generator=generator)
     
-    
-    docs: List[Document] = data_ingst.load_documents()
-    
-    chunks: List[Document] = chunker.split_documents(documents=docs)
-    embeddings: np.ndarray = embeding.embed_documents(chunks=chunks)
-    vectore_store.add(embeddings=embeddings, docs=chunks)
-    answer = pipeline.ask(question="در رابطه با الگوریتم و روش های تشخیص شی بهم توضیح بده", k=50)
-    print(answer)
+    while True:
+        question = input(">> ")
 
+        if question == "خارج شو از چت":
+            break
+
+        answer = pipeline.ask(question=question, k=10)
+        print(answer)
+    
 if __name__ == "__main__":
     main()
