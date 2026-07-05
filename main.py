@@ -10,22 +10,24 @@ from src.pipeline.simple_rag_pipeline import SimpleRAGPipeLine
 from typing import List
 import numpy as np
 import os
-from src.utils.utils import load_yaml_config_file
+from src.utils.utils import load_yaml_config_file, logger
 from typing import Dict
 
 def main(cfg: Dict):
-    
+    logger.info(f"************ start rag-llm ************")
     embeding = Embedding(model_name=cfg.get("Embedding").get("model_name", "BAAI/bge-m3"), device=cfg.get("Embedding").get("device", "cuda"))
-    
     if not os.path.exists(cfg.get("FIASSVectoreStore").get("index_path")) or not os.path.exists(cfg.get("FIASSVectoreStore").get("document_path")):
-        print("not found any data")
+        logger.warning("not found any data")
         data_ingst = DataIngestion(path=cfg.get("DataIngestion").get("document_src_dir", "docs"))
         chunker = Chunker(chunk_size=cfg.get("Chunker").get("chunk_size"), chunk_overlap=cfg.get("Chunker").get("chunk_overlap"))
         vector_store = FaissVectorStore(dimention=cfg.get("FIASSVectoreStore").get("dimention"))
 
         docs: List[Document] = data_ingst.load_documents()
         chunks: List[Document] = chunker.split_documents(documents=docs)
-        chunk_embedding: np.ndarray = embeding.embed_documents(chunks=chunks)
+        chunk_embedding: np.ndarray = embeding.embed_documents(chunks=chunks, batch_size=cfg.get("Embedding").get("batch_size"), 
+                                                               normalize_embeddings=cfg.get("Embedding").get("normalize_embeddings"), 
+                                                               show_progress_bar=cfg.get("Embedding").get("show_progress_bar"), 
+                                                               convert_to_numpy=cfg.get("Embedding").get("convert_to_numpy"))
         vector_store.add(embeddings=chunk_embedding, docs=chunks)
         os.makedirs("data", exist_ok=True)
         vector_store.save(index_path=cfg.get("FIASSVectoreStore").get("index_path"), document_path=cfg.get("FIASSVectoreStore").get("document_path"))

@@ -4,6 +4,8 @@ from sentence_transformers import SentenceTransformer
 
 import numpy as np
 import torch
+from src.utils.utils import logger
+
 
 class Embedding:
     def __init__(self, model_name: str, device: str | None) -> None:
@@ -27,7 +29,9 @@ class Embedding:
     
     def embed_documents(self, chunks: List[Document], batch_size: int=32, normalize_embeddings: bool=True, show_progress_bar: bool=True, convert_to_numpy: bool=True) -> np.ndarray:
         if not chunks:
+            logger.error(f"{__class__.__name__}: chunks is empty")
             raise ValueError("chunks cannot be empty.")
+
         
         texts: List[str] = [chunk.page_content for chunk in chunks]
         embeddings = self.model.encode(texts, batch_size=batch_size,
