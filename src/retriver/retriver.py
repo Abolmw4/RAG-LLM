@@ -7,7 +7,7 @@ from typing import List
 
 
 class SimpleRetriver(Retriver):
-    def __init__(self, embedding, vector_store):
+    def __init__(self, embedding: Embedding, vector_store: BaseVectorStore):
         super().__init__()
         self.embedder = embedding
         self.vector_store = vector_store

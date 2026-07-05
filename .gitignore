@@ -5,3 +5,5 @@ __pycache__
 rag-env
 *.pdf
 *.bin
+*.pkl
+*.index
