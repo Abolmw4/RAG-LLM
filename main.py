@@ -8,7 +8,7 @@ from src.retriver.retriver import SimpleRetriver
 from src.generators.ollama_generator import OllamaGenerator
 from src.pipeline.simple_rag_pipeline import SimpleRAGPipeLine
 from typing import List
-
+import numpy as np
 
 def main():
     data_ingst = DataIngestion(path="/home/abolfazl/Documents/rag-llm-project/docs")
@@ -18,10 +18,16 @@ def main():
     prompt_builder = SimplePrompt()
     retriver = SimpleRetriver(embedding=embeding, vector_store=vectore_store)
     generator = OllamaGenerator()
-    pipeline = SimpleRAGPipeLine()
+    pipeline = SimpleRAGPipeLine(retriver=retriver, prompt_builder=prompt_builder, generator=generator)
+    
+    
     docs: List[Document] = data_ingst.load_documents()
     
-    
-    
+    chunks: List[Document] = chunker.split_documents(documents=docs)
+    embeddings: np.ndarray = embeding.embed_documents(chunks=chunks)
+    vectore_store.add(embeddings=embeddings, docs=chunks)
+    answer = pipeline.ask(question="در رابطه با الگوریتم و روش های تشخیص شی بهم توضیح بده", k=50)
+    print(answer)
+
 if __name__ == "__main__":
     main()

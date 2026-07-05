@@ -46,7 +46,7 @@ class FaissVectorStore(BaseVectorStore):
         faiss.write_index(self.index, index_path)
         with open(document_path, 'wb') as file:
             pickle.dump(self.documents, file)
-                
+
     def search(self, query: np.ndarray, k: int=5) -> List[Document]:
         if self.index.ntotal == 0:
             raise ValueError("Vector store is empty")
