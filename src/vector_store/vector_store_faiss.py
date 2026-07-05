@@ -4,6 +4,7 @@ from langchain_core.documents import Document
 import faiss
 import numpy as np
 import pickle
+from src.utils.utils import logger
 
 class FaissVectorStore(BaseVectorStore):
     def __init__(self, dimention: int) -> None:
@@ -21,10 +22,12 @@ class FaissVectorStore(BaseVectorStore):
         if isinstance(value, int) and value > 0:
             self._dimention = value
         else:
+            logger.error(f"{__class__.__name__}: 'dimention' has a problem in type and value")
             raise ValueError(f"'dimention' must be grater than 0 and must be int")
     
     def add(self, embeddings: np.ndarray, docs: List[Document]) -> None:
         if embeddings.shape[0] != len(docs):
+            logger.error(f"{__class__.__name__}: number of embeddings and Documents not match.")
             raise ValueError("number of embeddings and Documents must be match.")
 
         embeddings = embeddings.astype(np.float32)
@@ -33,22 +36,29 @@ class FaissVectorStore(BaseVectorStore):
         
     @classmethod
     def load(cls, index_path: str, document_path: str):
-        index = faiss.read_index(index_path)
-        with open(document_path, 'rb') as file:
-            documents = pickle.load(file)
-        
-        store = cls(index.d)
-        store.index = index
-        store.documents = documents
-        return store
+        try:
+            index = faiss.read_index(index_path)
+            with open(document_path, 'rb') as file:
+                documents = pickle.load(file)
+            store = cls(index.d)
+            store.index = index
+            store.documents = documents
+            logger.debug(f"{__class__.__name__}: load index and document sucessfully")
+            return store
+        except RuntimeError as error:
+            logger.error(f"{__class__.__name__}: when loading index and document error '{error}' occured")
     
     def save(self, index_path: str, document_path: str) -> None:
-        faiss.write_index(self.index, index_path)
-        with open(document_path, 'wb') as file:
-            pickle.dump(self.documents, file)
-
+        try:
+            faiss.write_index(self.index, index_path)
+            with open(document_path, 'wb') as file:
+                pickle.dump(self.documents, file)
+            logger.debug(f"{__class__.__name__}: index and document saved sucessfully")
+        except RuntimeError as error:
+            logger.error(f"{__class__.__name__}: save index and document error '{error}' occured")
     def search(self, query: np.ndarray, k: int=5) -> List[Document]:
         if self.index.ntotal == 0:
+            logger.error(f"{__class__.__name__}: Vector store is empty")
             raise ValueError("Vector store is empty")
         
         result: List[Document] = []
