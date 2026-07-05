@@ -1,0 +1,26 @@
+DataIngestion:
+  document_src_dir: "docs"
+
+Chunker:
+  chunk_size: 1000
+  chunk_overlap: 100
+
+FIASSVectoreStore:
+  dimention: 1024
+  index_path: "data/doc.index"
+  document_path: "data/doc.pkl"
+
+Embedding:
+  model_name: "BAAI/bge-m3"
+  device: "cuda"
+  batch_size: 32
+  normalize_embeddfings: True
+  show_progress_bar: True
+  convert_to_numpy: True
+
+Retriver:
+  k: 10
+
+Generator:
+  model_name: "gemma3:4B"
+  host: "http://localhost:11434"

@@ -10,25 +10,27 @@ from src.pipeline.simple_rag_pipeline import SimpleRAGPipeLine
 from typing import List
 import numpy as np
 import os
+from src.utils.utils import load_yaml_config_file
+from typing import Dict
 
-def main():
+def main(cfg: Dict):
     
-    embeding = Embedding(model_name="BAAI/bge-m3", device="cuda")
+    embeding = Embedding(model_name=cfg.get("Embedding").get("model_name", "BAAI/bge-m3"), device=cfg.get("Embedding").get("device", "cuda"))
     
-    if not os.path.exists('data/doc.index') or not os.path.exists("data/doc.pkl"):
+    if not os.path.exists(cfg.get("FIASSVectoreStore").get("index_path")) or not os.path.exists(cfg.get("FIASSVectoreStore").get("document_path")):
         print("not found any data")
-        data_ingst = DataIngestion(path="/home/abolfazl/Documents/rag-llm-project/docs")
-        chunker = Chunker(chunk_size=500, chunk_overlap=50)
-        vector_store = FaissVectorStore(dimention=1024)
+        data_ingst = DataIngestion(path=cfg.get("DataIngestion").get("document_src_dir", "docs"))
+        chunker = Chunker(chunk_size=cfg.get("Chunker").get("chunk_size"), chunk_overlap=cfg.get("Chunker").get("chunk_overlap"))
+        vector_store = FaissVectorStore(dimention=cfg.get("FIASSVectoreStore").get("dimention"))
 
         docs: List[Document] = data_ingst.load_documents()
         chunks: List[Document] = chunker.split_documents(documents=docs)
         chunk_embedding: np.ndarray = embeding.embed_documents(chunks=chunks)
         vector_store.add(embeddings=chunk_embedding, docs=chunks)
         os.makedirs("data", exist_ok=True)
-        vector_store.save(index_path="data/doc.index", document_path="data/doc.pkl")
+        vector_store.save(index_path=cfg.get("FIASSVectoreStore").get("index_path"), document_path=cfg.get("FIASSVectoreStore").get("document_path"))
     
-    vector_store: FaissVectorStore = FaissVectorStore.load(index_path='data/doc.index', document_path='data/doc.pkl')
+    vector_store: FaissVectorStore = FaissVectorStore.load(index_path=cfg.get("FIASSVectoreStore").get("index_path"), document_path=cfg.get("FIASSVectoreStore").get("document_path"))
 
     retriver = SimpleRetriver(embedding=embeding, vector_store=vector_store)
     generator = OllamaGenerator()
@@ -45,4 +47,5 @@ def main():
         print(answer)
     
 if __name__ == "__main__":
-    main()
+    configs = load_yaml_config_file(config_src="configs/config.yaml")
+    main(configs)
