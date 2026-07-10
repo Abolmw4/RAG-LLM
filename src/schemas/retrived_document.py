@@ -5,3 +5,4 @@ from langchain_core.documents import Document
 class RetrivedDocument:
     document: Document
     score: float
+    doc_id: int
