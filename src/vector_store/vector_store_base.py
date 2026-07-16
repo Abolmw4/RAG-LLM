@@ -17,3 +17,7 @@ class BaseVectorStore(ABC):
     @abstractmethod
     def search(self):
         pass
+    
+    @abstractmethod
+    def search_with_score(self):
+        pass

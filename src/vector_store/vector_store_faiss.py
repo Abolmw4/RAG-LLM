@@ -5,7 +5,7 @@ import faiss
 import numpy as np
 import pickle
 from src.utils.utils import logger
-
+from src.schemas.retrived_document import RetrivedDocument
 class FaissVectorStore(BaseVectorStore):
     def __init__(self, dimention: int) -> None:
         self.dimention = dimention
@@ -56,6 +56,7 @@ class FaissVectorStore(BaseVectorStore):
             logger.debug(f"{__class__.__name__}: index and document saved sucessfully")
         except RuntimeError as error:
             logger.error(f"{__class__.__name__}: save index and document error '{error}' occured")
+    
     def search(self, query: np.ndarray, k: int=5) -> List[Document]:
         if self.index.ntotal == 0:
             logger.error(f"{__class__.__name__}: Vector store is empty")
@@ -65,10 +66,27 @@ class FaissVectorStore(BaseVectorStore):
         if query.ndim == 1:
             query_embedding = np.expand_dims(query, axis=0)
         
-        scores, indices = self.index.search(query_embedding.astype(np.float32), k=k)
+        _, indices = self.index.search(query_embedding.astype(np.float32), k=k)
 
         for indx in indices[0]:
             if indx == -1:
                 continue
             result.append(self.documents[indx])
+        return result
+    
+    def search_with_score(self, query: np.ndarray, k: int=5) -> List[RetrivedDocument]:
+        if self.index.ntotal == 0:
+            logger.error(f"{__class__.__name__}: Vector store is empty")
+            raise ValueError("Vector store is empty")
+        
+        result: List[RetrivedDocument] = []
+        if query.ndim == 1:
+            query_embedding = np.expand_dims(query, axis=0)
+        
+        scores, indices = self.index.search(query_embedding.astype(np.float32), k=k)
+
+        for indx, score in zip(indices[0], scores[0]):
+            if indx == -1:
+                continue
+            result.append(RetrivedDocument(document=self.documents[indx], score=float(score), doc_id=indx))
         return result
