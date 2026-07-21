@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from langchain_core.documents import Document
+from src.schemas.retrived_document import RetrivedDocument
 from typing import List
 
 
 class PromptBuilder(ABC):
     
     @abstractmethod
-    def build_prompt(self, question: str, docs: List[Document]) -> str:
+    def build_prompt(self, question: str, docs: List[RetrivedDocument]) -> str:
         pass

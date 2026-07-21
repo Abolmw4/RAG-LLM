@@ -4,9 +4,13 @@ from src.chunker import Chunker
 from src.embeddings import Embedding
 from src.vector_store.vector_store_faiss import FaissVectorStore
 from src.prompt_builder.simple_prompt import SimplePrompt
-from src.retriver.retriver import SimpleRetriver
+from src.retriver.retriver_base import Retriver
+from src.retriver.dense_retriver import DenseRetriver
+from src.retriver.sparse_retriver import SparseRetriver
 from src.generators.ollama_generator import OllamaGenerator
 from src.pipeline.simple_rag_pipeline import SimpleRAGPipeLine
+from src.fusion.rrffusion import RRFFusion
+from src.fusion.base_fusion import BaseFusion
 from typing import List
 import numpy as np
 import os
@@ -31,13 +35,17 @@ def main(cfg: Dict):
         vector_store.add(embeddings=chunk_embedding, docs=chunks)
         os.makedirs("data", exist_ok=True)
         vector_store.save(index_path=cfg.get("FIASSVectoreStore").get("index_path"), document_path=cfg.get("FIASSVectoreStore").get("document_path"))
-    
     vector_store: FaissVectorStore = FaissVectorStore.load(index_path=cfg.get("FIASSVectoreStore").get("index_path"), document_path=cfg.get("FIASSVectoreStore").get("document_path"))
-
-    retriver = SimpleRetriver(embedding=embeding, vector_store=vector_store)
+    docs = vector_store.documents
+    # retriver: Retriver = SimpleRetriver(embedding=embeding, vector_store=vector_store)
+    retriver_dense: Retriver = DenseRetriver(embedding=embeding, vector_store=vector_store)
+    retriver_sparse: Retriver = SparseRetriver(documents=docs)
+    fusion: BaseFusion = RRFFusion()
+    
     generator = OllamaGenerator()
     prompt_builder = SimplePrompt()
-    pipeline = SimpleRAGPipeLine(retriver=retriver, prompt_builder=prompt_builder, generator=generator)
+    # pipeline = SimpleRAGPipeLine(retriver=retriver, prompt_builder=prompt_builder, generator=generator)
+    pipeline = SimpleRAGPipeLine(retriver_dense=retriver_dense, retriver_spars=retriver_sparse, fusion=fusion, prompt_builder=prompt_builder, generator=generator)
     
     while True:
         question = input(">> ")
