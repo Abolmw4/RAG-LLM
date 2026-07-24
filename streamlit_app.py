@@ -33,7 +33,6 @@ def render_sidebar() -> dict:
         st.session_state.messages = []
         st.session_state.last_response = None
         st.rerun()
-
     return options
 
 
