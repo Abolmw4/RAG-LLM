@@ -1,0 +1,11 @@
+__pycache__
+.vscode
+.idea
+*.pth
+rag-env
+*.pdf
+*.bin
+*.pkl
+*.index
+*.log
+.gitignore
