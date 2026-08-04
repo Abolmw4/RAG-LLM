@@ -1,0 +1,49 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: my-app
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_HOST: http://localhost:11434
+    ports:
+      - "8000:8000"
+    restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  ollama:
+    image: ollama/ollama:rocm
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: always
+    
+
+  ollama-pull-model:
+    image: ollama/ollama:rocm
+    container_name: ollama-pull-model
+    volumes:
+      - ollama_data:/root/.ollama
+    depends_on:
+      - ollama
+    entrypoint: >
+      sh -c "
+      echo 'Waiting for ollama server...' &&
+      until sleep 3; do exit; done &&
+      ollama serve &&
+      ollama pull BAAI/bge-m3
+      "
+    restart: "no"
+    
+volumes:
+  ollama_data:
