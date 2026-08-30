@@ -2,7 +2,7 @@ from src.generators.generator import Generator
 from ollama import Client
 from src.utils.utils import logger
 class OllamaGenerator(Generator):
-    def __init__(self, model_name: str="gemma3:4B", host: str="http://localhost:11434"):
+    def __init__(self, model_name: str="gemma3:4B", host: str="http://ollama:11434"):
         super().__init__()
         self.client = Client(host=host)
         self.model = model_name

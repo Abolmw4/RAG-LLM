@@ -7,10 +7,11 @@ services:
     depends_on:
       - ollama
     environment:
-      OLLAMA_HOST: http://localhost:11434
+      OLLAMA_HOST: http://ollama:11434
     ports:
-      - "8000:8000"
+      - "8501:8501"
     restart: always
+    command: ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.enableCORS=false", "--server.enableXsrfProtection=false"]
     deploy:
       resources:
         reservations:
@@ -22,28 +23,49 @@ services:
   ollama:
     image: ollama/ollama:rocm
     container_name: ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434   
+    dns:
+      - 178.22.122.100 # Shecan DNS (Iran anti-sanction)
+      - 185.51.200.2
+      - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     restart: always
-    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
-  ollama-pull-model:
+  ollama-pull:
     image: ollama/ollama:rocm
-    container_name: ollama-pull-model
-    volumes:
-      - ollama_data:/root/.ollama
+    container_name: ollama-pull
     depends_on:
       - ollama
-    entrypoint: >
-      sh -c "
-      echo 'Waiting for ollama server...' &&
-      until sleep 3; do exit; done &&
-      ollama serve &&
-      ollama pull BAAI/bge-m3
-      "
+    dns:
+      - 178.22.122.100
+      - 185.51.200.2
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for ollama server to be ready..."
+        until ollama list > /dev/null 2>&1; do
+          sleep 2
+        done
+        echo "Server is up! Pulling llama3.2..."
+        ollama pull llama3.2
     restart: "no"
-    
+
 volumes:
   ollama_data:
