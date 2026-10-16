@@ -21,7 +21,7 @@ services:
               capabilities: [gpu]
 
   ollama:
-    image: ollama/ollama:rocm
+    image: docker.arvancloud.ir/ollama/ollama:latest
     container_name: ollama
     environment:
       - OLLAMA_HOST=0.0.0.0:11434   
@@ -44,7 +44,7 @@ services:
               capabilities: [gpu]
 
   ollama-pull:
-    image: ollama/ollama:rocm
+    image: docker.arvancloud.ir/ollama/ollama:latest
     container_name: ollama-pull
     depends_on:
       - ollama
