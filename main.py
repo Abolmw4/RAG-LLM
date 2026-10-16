@@ -28,9 +28,8 @@ def main(cfg: Dict):
 
         docs: List[Document] = data_ingst.load_documents()
         chunks: List[Document] = chunker.split_documents(documents=docs)
-        chunk_embedding: np.ndarray = embeding.embed_documents(chunks=chunks, batch_size=cfg.get("Embedding").get("batch_size"), 
-                                                               normalize_embeddings=cfg.get("Embedding").get("normalize_embeddings"), 
-                                                               show_progress_bar=cfg.get("Embedding").get("show_progress_bar"), 
+        chunk_embedding: np.ndarray = embeding.embed_documents(chunks=chunks, batch_size=cfg.get("Embedding").get("batch_size"), normalize_embeddings=cfg.get("Embedding").get("normalize_embeddings"), 
+                                                               show_progress_bar=cfg.get("Embedding").get("show_progress_bar"),
                                                                convert_to_numpy=cfg.get("Embedding").get("convert_to_numpy"))
         vector_store.add(embeddings=chunk_embedding, docs=chunks)
         os.makedirs("data", exist_ok=True)

@@ -22,5 +22,5 @@ Retriver:
   k: 10
 
 Generator:
-  model_name: "gemma3:4B"
+  model_name: "llama3.2:latest"
   host: "http://localhost:11434"
